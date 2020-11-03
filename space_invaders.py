@@ -21,7 +21,7 @@ class Alien:
         self.x = x
         self.game = game
         self.y = y
-        self.size = 30
+        self.size = 16
 
     def draw(self):
         pygame.draw.rect(self.game.screen,
@@ -74,10 +74,12 @@ class Hero:
 
 class Generator:
     def __init__(self, game):
+        rows = 4
+        cols = 10
         margin = 30
-        width = 50
-        for x in range(margin, game.width - margin, width):
-            for y in range(margin, int(game.height / 2), width):
+        width = 40
+        for x in range(margin, margin + cols * width, width):
+            for y in range(margin, margin + rows * width, width):
                 game.aliens.append(Alien(game, x, y))
 
 class Rocket:
