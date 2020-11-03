@@ -28,7 +28,7 @@ class Alien:
             (81, 43, 88),
             pygame.Rect(self.x, self.y, self.size, self.size))
 
-        self.y += 0.05
+        # self.y += 0.05
 
     def maybeGenerateRocket(self, game):
         if random.randint(0, 10000) < 5:
@@ -73,14 +73,48 @@ class Hero:
                 self.game.lost = True
 
 class Generator:
-    def __init__(self, game):
-        rows = 4
-        cols = 10
-        margin = 30
-        width = 40
-        for x in range(margin, margin + cols * width, width):
-            for y in range(margin, margin + rows * width, width):
-                game.aliens.append(Alien(game, x, y))
+    def __init__(self, game, vel = 1.6, acc = 0.05):
+        self.rows = 4
+        self.cols = 10
+        self.margin = 15
+        self.width = 40
+
+        self.game = game
+        self.vel = vel
+        self.acc = acc
+
+        for x in range(self.margin, self.margin + self.cols * self.width, self.width):
+            for y in range(self.margin, self.margin + self.rows * self.width, self.width):
+                self.game.aliens.append(Alien(self.game, x, y))
+
+    def moveAliens(self):
+        min_alien_x = min([alien.x for alien in self.game.aliens])
+        max_alien_x = max([alien.x + alien.size for alien in self.game.aliens])
+        min_location_x = self.margin
+        max_location_x = self.game.width - self.margin
+        if self.vel > 0 and max_alien_x > max_location_x or self.vel < 0 and min_alien_x < min_location_x:
+            self.vel *= -1
+            for alien in self.game.aliens:
+                alien.y += alien.size
+            if self.vel > 0:
+                self.vel += self.acc
+            else:
+                self.vel -= self.acc
+        else:
+            for alien in self.game.aliens:
+                alien.x += self.vel
+
+
+    def iterateAliens(self, hero):
+        if len(self.game.aliens):
+            self.moveAliens()
+        for alien in self.game.aliens:
+            alien.draw()
+            alien.checkCollision(self.game)
+            if (alien.y + alien.size > hero.y):
+                self.game.lost = True
+            alien.maybeGenerateRocket(self.game)
+
 
 class Rocket:
     def __init__(self, game, x, y, color=green, speed=hero_rocket_vel):
@@ -107,7 +141,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.intro = True
-        def intro_false():
+        def introFalse():
             self.intro = False
 
         while self.intro:
@@ -134,7 +168,7 @@ class Game:
                 height=button_height,
                 initial_color=green,
                 action_color=bright_green,
-                action=intro_false
+                action=introFalse
             )
         
         self.play_game()
@@ -189,15 +223,8 @@ class Game:
             pygame.display.flip()
             self.clock.tick(60)
             self.screen.fill((0, 0, 0))
-            
 
-            for alien in self.aliens:
-                alien.draw()
-                alien.checkCollision(self)
-                if (alien.y + alien.size > hero.y):
-                    self.lost = True
-                    break
-                alien.maybeGenerateRocket(self)
+            generator.iterateAliens(hero)
 
             if self.lost:
                 self.displayText("GAME OVER")
